@@ -105,3 +105,14 @@ li {
   color: #00d8ff;
   border: none;
 }
+
+.error-code {
+  text-align: center;
+  font-size: 48px;
+  margin-bottom: 0;
+  color: rgb(255, 102, 102);
+}
+.error-message {
+  text-align: center;
+  font-size: 18px;
+}

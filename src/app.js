@@ -1,68 +1,86 @@
 'use strict'
 
 import React, { Component } from 'react';
+import axios from 'axios';
+import AppContent from './components/app-content';
 
 class App extends Component {
 
+    constructor() {
+        super()
+        this.state = {
+            userInfo: null,
+            repos: [],
+            starred: [],
+            searchError: []
+        }
+    }
+
+    handleSearch(e) {
+        axios.get(`https://api.github.com/users/${e.target.value}`)
+            .then(res => {
+                this.setState({
+                    userInfo: {
+                        username: res.data.name,
+                        profileUrl: res.data.login,
+                        photoUrl: res.data.avatar_url,
+                        repos: res.data.public_repos,
+                        followers: res.data.followers,
+                        following: res.data.following
+                    },
+                    repos: [],
+                    starred: [],
+                    searchError: []
+                });
+            }).catch((error) => {
+                if (error.response) {
+                    console.log(error.response.data);
+                    console.log(error.response.status);
+                    console.log(error.response.headers);
+                    this.setState({
+                        userInfo: null,
+                        repos: [],
+                        starred: [],
+                        searchError: {
+                            status: error.response.status,
+                            message: error.response.data.message
+                        }
+                    });
+                }
+            });
+    }
+
+    getRepos(type) {
+        return (e) => {
+            axios.get(`https://api.github.com/users/${this.state.userInfo.profileUrl}/${type}`)
+                .then((result) => {
+                    this.setState({
+                        [type]: result.data.map((repo) => ({
+                            name: repo.name,
+                            link: repo.url
+                        })),
+                    });
+                    type = type == 'repos' ? 'starred' : 'repos';
+                    this.setState({
+                        [type]: []
+                    })
+                }).catch(function (error) {
+                    if (error.response) {
+                        console.log(error.response.data);
+                        console.log(error.response.status);
+                        console.log(error.response.headers);
+                    }
+                });
+        }
+    }
+
     render() {
-        return (
-            <div className="app">
-
-                <div className="header">
-                    <img className="header-logo" src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/React-icon.svg/1280px-React-icon.svg.png" />
-                </div>
-
-                <div className="content">
-
-                    <div className="search">
-                        <input type="search" placeholder="Digite o nome do usuário..." />
-                    </div>
-
-                    <div className="user-info">
-                        <img src="https://avatars1.githubusercontent.com/u/22194857?v=4" />
-
-                        <h1>
-                            <a href="#">Willian Ferreira</a>
-                        </h1>
-
-                        <ul className="repos-info">
-                            <li>Repositórios: 2</li>
-                            <li>Seguidores: 0</li>
-                            <li>Seguindo: 1</li>
-                        </ul>
-
-                    </div>
-
-                    <div className="actions">
-                        <button>Ver repositórios</button>
-                        <button>Ver favoritos</button>
-                    </div>
-
-                    <div className="actions-info">
-
-                        <div>
-                            <h2>Repositórios:</h2>
-                            <ul className="repos">
-                                <li><a href="#">Repo name</a></li>
-                                <li><a href="#">Repo name</a></li>
-                                <li><a href="#">Repo name</a></li>
-                            </ul>
-                        </div>
-
-                        <div>
-                            <h2>Favoritos:</h2>
-                            <ul className="starred">
-                                <li><a href="#">Starred name</a></li>
-                                <li><a href="#">Starred name</a></li>
-                                <li><a href="#">Starred name</a></li>
-                            </ul>
-                        </div>
-
-                    </div>
-
-                </div>
-            </div>
-        )
+        return <AppContent
+            {...this.state}
+            handleSearch={e => this.handleSearch(e)}
+            getRepos={this.getRepos('repos')}
+            getStarred={this.getRepos('starred')}
+        />
     }
 
 }
